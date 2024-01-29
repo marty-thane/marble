@@ -13,7 +13,8 @@ install_dotfiles() {
 
 	git clone "https://github.com/$gh_path.git" dotfiles/
 	mv -iv dotfiles/* "$HOME/.config/"
-	rm -rf dotfiles/
+	mv -iv dotfiles/.* "$HOME/.config/"
+	rm -r dotfiles/
 }
 
 grub_disable_timeout() {
