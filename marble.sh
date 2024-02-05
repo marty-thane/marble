@@ -26,6 +26,10 @@ disable_ssh() {
 	rm /var/service/sshd
 }
 
+disable_root() {
+	passwd -l root
+}
+
 update_packages() {
 	xbps-install -Suy xbps
 	xbps-install -Suy
@@ -66,6 +70,7 @@ change_root_shell() {
 declare -A root_options=(
 	["Change Root Shell"]="change_root_shell"
 	["Disable SSH"]="disable_ssh"
+	["Disable Root Account"]="disable_root"
 	["Grub Disable Timeout"]="grub_disable_timeout"
 	["Make Bash XDG Compliant"]="make_bash_xdg"
 	["Setup Doas"]="setup_doas"

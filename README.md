@@ -15,6 +15,8 @@ typically perform on your system.
 - **GRUB Timeout**: Speed up system boot times by disabling the GRUB timeout.
 - **SSH Disabling**: Easily remove the SSH daemon service to disable SSH
   access.
+- **Root Account Disabling**: Disallow logging in as root for security reasons
+  (use doas instead).
 - **Package Updates**: Keep your system up-to-date by utilizing the xbps
   package manager for updates.
 - **Fast File Searching**: Set up plocate for efficient file searching
