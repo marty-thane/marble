@@ -3,18 +3,26 @@
 data="./marble_files/"
 
 install_dotfiles() {
-	read -p "GitHub URL: https://github.com/" gh_path
+	read -p 'GitHub URL: https://github.com/' gh_path
 
-	# Make sure git is installed
+	# make sure git is installed
 	if ! command -v git &> /dev/null; then
-		echo "Error: 'git' is not installed. Please install it and run the script again."
-		exit 1
+		xbps-install -Syv git
 	fi
 
-	git clone "https://github.com/$gh_path.git" dotfiles/
-	mv -iv dotfiles/* "$HOME/.config/"
-	mv -iv dotfiles/.* "$HOME/.config/"
-	rm -r dotfiles/
+	git clone "https://github.com/$gh_path" dotfiles/
+	mv -iv dotfiles/* $HOME/.config/
+	mv -iv dotfiles/.* $HOME/.config/
+	rmdir -v dotfiles/
+}
+
+install_i3() {
+	xbps-install -Syv $(cat $data/progs)
+	mkdir -pv $HOME/.local/src/
+	git clone https://github.com/marty-thane/dmenu.git $HOME/.local/src/dmenu/
+	git clone https://github.com/marty-thane/sent.git $HOME/.local/src/sent/
+	make -C $HOME/.local/src/dmenu/ install clean
+	make -C $HOME/.local/src/sent/ install clean
 }
 
 grub_disable_timeout() {
@@ -23,56 +31,64 @@ grub_disable_timeout() {
 }
 
 disable_ssh() {
-	rm /var/service/sshd
+	rm -v /var/service/sshd
 }
 
 disable_root() {
 	passwd -l root
 }
 
+numlock_at_boot() {
+	mkdir -pv "/etc/sv/numlock"
+	cp -v "$data/numlock" "/etc/sv/numlock/run"
+	chmod +x /etc/sv/numlock/run
+	ln -sv /etc/sv/numlock /var/service/
+}
+
 update_packages() {
-	xbps-install -Suy xbps
-	xbps-install -Suy
+	xbps-install -Suyv xbps
+	xbps-install -Suyv
 }
 
 setup_gpg() {
-	mkdir -p "$HOME/.local/share/gnupg"
+	mkdir -pv "$HOME/.local/share/gnupg"
 	chmod 700 "$HOME/.local/share/gnupg"
 	gpg --full-gen-key
 	chmod 600 "$HOME/.local/share/gnupg/*"
 }
 
 create_user_dirs() {
-	xdg-user-dirs --force
+	xdg-user-dirs-update --force
 }
 
 setup_locate() {
-	xbps-install -Sy plocate
-	updatedb
+	xbps-install -Syv plocate
+	updatedb -v
 }
 
-make_bash_xdg() {
-	mkdir -p "/etc/profile.d/"
-	mkdir -p "/etc/bash/bashrc.d/"
-	cp "$data/profile_xdg.sh" "/etc/profile.d/"
-	cp "$data/bashrc_xdg.sh" "/etc/bash/bashrc.d/"
+bash_xdg() {
+	mkdir -pv "/etc/profile.d/"
+	mkdir -pv "/etc/bash/bashrc.d/"
+	cp -v "$data/profile_xdg.sh" "/etc/profile.d/"
+	cp -v "$data/bashrc_xdg.sh" "/etc/bash/bashrc.d/"
 }
 
 setup_doas() {
-	xbps-install -Sy opendoas
-	cp "$data/doas.conf" "/etc/"
+	xbps-install -Syv opendoas
+	cp -v "$data/doas.conf" "/etc/"
 }
 
-change_root_shell() {
-	chsh -s /bin/bash root
+install_addons() {
+	firefox $(cat $data/addons)
 }
 
 declare -A root_options=(
-	["Change Root Shell"]="change_root_shell"
-	["Disable SSH"]="disable_ssh"
+	["Disable Grub Timeout"]="grub_disable_timeout"
 	["Disable Root Account"]="disable_root"
-	["Grub Disable Timeout"]="grub_disable_timeout"
-	["Make Bash XDG Compliant"]="make_bash_xdg"
+	["Disable SSH"]="disable_ssh"
+	["Enable NumLock At Boot"]="numlock_at_boot"
+	["Make Bash XDG Compliant"]="bash_xdg"
+	["Install i3 WM"]="install_i3"
 	["Setup Doas"]="setup_doas"
 	["Setup Locate"]="setup_locate"
 	["Update Packages"]="update_packages"
@@ -81,6 +97,7 @@ declare -A root_options=(
 declare -A user_options=(
 	["Create User Directories"]="create_user_dirs"
 	["Install Dotfiles"]="install_dotfiles"
+	["Install Firefox Addons"]="install_addons"
 	["Setup GPG"]="setup_gpg"
 )
 
