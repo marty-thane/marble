@@ -1,5 +1,4 @@
 autotiling
-catfish
 git
 i3
 mpv
@@ -8,8 +7,10 @@ newsboat
 nitrogen
 noto-fonts-emoji
 numlockx
+picom
 ranger
 sxiv
+ulauncher
 xclip
 xfce4-screenshooter
 xset

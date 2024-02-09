@@ -19,9 +19,7 @@ install_dotfiles() {
 install_i3() {
 	xbps-install -Syv $(cat $data/progs)
 	mkdir -pv $HOME/.local/src/
-	git clone https://github.com/marty-thane/dmenu.git $HOME/.local/src/dmenu/
 	git clone https://github.com/marty-thane/sent.git $HOME/.local/src/sent/
-	make -C $HOME/.local/src/dmenu/ install clean
 	make -C $HOME/.local/src/sent/ install clean
 }
 
@@ -45,9 +43,13 @@ numlock_at_boot() {
 	ln -sv /etc/sv/numlock /var/service/
 }
 
-update_packages() {
-	xbps-install -Suyv xbps
-	xbps-install -Suyv
+setup_locate() {
+	xbps-install -Syv plocate
+	updatedb -v
+}
+
+create_user_dirs() {
+	xdg-user-dirs-update --force
 }
 
 setup_gpg() {
@@ -55,15 +57,6 @@ setup_gpg() {
 	chmod 700 "$HOME/.local/share/gnupg"
 	gpg --full-gen-key
 	chmod 600 "$HOME/.local/share/gnupg/*"
-}
-
-create_user_dirs() {
-	xdg-user-dirs-update --force
-}
-
-setup_locate() {
-	xbps-install -Syv plocate
-	updatedb -v
 }
 
 bash_xdg() {
@@ -91,7 +84,6 @@ declare -A root_options=(
 	["Install i3 WM"]="install_i3"
 	["Setup Doas"]="setup_doas"
 	["Setup Locate"]="setup_locate"
-	["Update Packages"]="update_packages"
 )
 
 declare -A user_options=(
