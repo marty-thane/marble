@@ -33,8 +33,6 @@ configuration tasks.
   sudo for executing commands with superuser privileges.
 - **Setup Locate:** Installs the `plocate` package and updates the locate
   database, allowing users to quickly search for files on the system.
-- **Update Packages:** Updates all installed packages on the system using the
-  xbps package manager.
 
 ### Non-Root User
 
