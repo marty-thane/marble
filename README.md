@@ -1,10 +1,13 @@
 # Marble
 
-**Description:** Marble is a bash script for customizing a Void Linux system,
+## Description
+
+Marble is a bash script for customizing a Void Linux system,
 with various preferences and setups to spare the user of repetetive
 configuration tasks.
 
-**Usage:**
+## Usage
+
 1. Clone the repository like this: `git clone
    https://github.com/marty-thane/marble.git`
 2. Go to the created directory: `cd marble`
