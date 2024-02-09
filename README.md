@@ -1,7 +1,5 @@
 # Marble
 
-**Marble - Automated Void Linux Ricing Solution**
-
 **Description:** Marble is a bash script for customizing a Void Linux system,
 with various preferences and setups to spare the user of repetetive
 configuration tasks.
