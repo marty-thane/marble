@@ -93,7 +93,7 @@ declare -A user_options=(
 	["Setup GPG"]="setup_gpg"
 )
 
-# Determine if running as root or normal user
+# determine if running as root or normal user
 if [ "$(id -u)" -eq 0 ]; then
 	options=("${!root_options[@]}")
 	role="root"
