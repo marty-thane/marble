@@ -66,6 +66,15 @@ bash_xdg() {
 	cp -v "$data/bashrc_xdg.sh" "/etc/bash/bashrc.d/"
 }
 
+configure_git() {
+	read -p 'Name: ' name
+	read -p 'Contact: ' contact
+
+	git config --global user.name "$name"
+	git config --global user.email "$contact"
+	git config --global push.autoSetupRemote true
+}
+
 setup_doas() {
 	xbps-install -Syv opendoas
 	cp -v "$data/doas.conf" "/etc/"
@@ -87,6 +96,7 @@ declare -A root_options=(
 )
 
 declare -A user_options=(
+	["Configure Git"]="configure_git"
 	["Create User Directories"]="create_user_dirs"
 	["Install Dotfiles"]="install_dotfiles"
 	["Install Firefox Addons"]="install_addons"

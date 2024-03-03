@@ -37,6 +37,8 @@ configuration tasks.
 
 ### Non-Root User
 
+- **Configure Git:** Easily setup name and contact information for use with
+  GitHub etc. along with some other configurations.
 - **Create User Directories:** Creates standard user directories (e.g.,
   Documents, Downloads, Music) using the xdg-user-dirs-update utility.
 - **Install Dotfiles:** Clones dotfiles from a specified GitHub repository and
