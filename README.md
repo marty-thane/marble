@@ -16,7 +16,7 @@ configuration tasks.
 
 ## Disclaimer
 
-Marble is designed for Void Linux XFCE version and may not be compatible with
+Marble is designed for Void Linux version and may not be compatible with
 other distributions or desktop environments. Use at your own risk. Ensure you
 understand the actions performed by the script before executing it.
 
