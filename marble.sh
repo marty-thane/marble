@@ -1,26 +1,26 @@
 #!/bin/bash
 
+data="./files"
+title="Marble"
+
+root_actions=()
+nonroot_actions=()
+
+# Helper functions (might make porting to other distros easier)
 pkg_install() {
 	xbps-install -y $@
 }
-
 pkg_remove() {
 	xbps-remove -y $@
 }
-
 service_enable() {
 	ln -s /etc/sv/"$1" /var/service
 }
-
 service_disable() {
 	rm /var/service/"$1"
 }
 
-data="./files/"
-root_options=()
-nonroot_options=()
-
-root_options+=("setup_doas")
+root_actions+=("setup_doas" "Setup doas")
 setup_doas() {
 	pkg_install opendoas
 	cp -v "$data/doas.conf" '/etc/'
@@ -28,7 +28,7 @@ setup_doas() {
 	pkg_remove sudo
 }
 
-root_options+=("grub_disable_timeout")
+root_actions+=("grub_disable_timeout" "Disable GRUB timeout")
 grub_disable_timeout() {
 	if grep -q "^GRUB_TIMEOUT=" /etc/default/grub; then
 		sed -i -E 's/GRUB_TIMEOUT=[0-9]*/GRUB_TIMEOUT=0/' /etc/default/grub
@@ -38,7 +38,7 @@ grub_disable_timeout() {
 	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
-root_options+=("setup_networkmanager")
+root_actions+=("setup_networkmanager" "Setup NetworkManager")
 setup_networkmanager() {
 	service_disable dhcpcd
 	service_disable wpa_supplicant
@@ -46,17 +46,17 @@ setup_networkmanager() {
 	service_enable NetworkManager
 }
 
-root_options+=("enable_dbus")
+root_actions+=("enable_dbus" "Enable DBus")
 enable_dbus() {
 	service_enable dbus
 }
 
-root_options+=("disable_ssh")
+root_actions+=("disable_ssh" "Disable SSH")
 disable_ssh() {
 	service_disable sshd
 }
 
-root_options+=("numlock_at_boot")
+root_actions+=("numlock_at_boot" "Enable NumLock at boot")
 numlock_at_boot() {
 	mkdir -pv "/etc/sv/numlock"
 	cp -v "$data/numlock" "/etc/sv/numlock/run"
@@ -64,18 +64,18 @@ numlock_at_boot() {
 	service_enable numlock
 }
 
-root_options+=("disable_root")
+root_actions+=("disable_root" "Disable root login")
 disable_root() {
 	passwd -l root
 }
 
-root_options+=("setup_locate")
+root_actions+=("setup_locate" "Setup locate")
 setup_locate() {
 	pkg_install plocate
 	updatedb -v
 }
 
-root_options+=("bash_xdg")
+root_actions+=("bash_xdg" "Make bash XDG compliant")
 bash_xdg() {
 	mkdir -pv "/etc/profile.d/"
 	cp -v "$data/profile_xdg.sh" "/etc/profile.d/"
@@ -83,7 +83,7 @@ bash_xdg() {
 	cp -v "$data/bashrc_xdg.sh" "/etc/bash/bashrc.d/"
 }
 
-root_options+=("install_i3")
+root_actions+=("install_i3" "Install i3")
 install_i3() {
 	pkg_install $(cat $data/progs)
 	mkdir -pv $HOME/.local/src/
@@ -93,25 +93,25 @@ install_i3() {
 	make -C $HOME/.local/src/dmenu/ install clean
 }
 
-nonroot_options+=("create_user_dirs")
+nonroot_actions+=("create_user_dirs" "Create user directories")
 create_user_dirs() {
 	xdg-user-dirs-update --force
 }
 
-nonroot_options+=("install_dotfiles")
+nonroot_actions+=("install_dotfiles" "Install dotfiles")
 install_dotfiles() {
 	read -p 'GitHub URL: https://github.com/' gh_path
 	git clone "https://github.com/$gh_path" $HOME/.config/
 }
 
-nonroot_options+=("setup_gpg")
+nonroot_actions+=("setup_gpg" "Setup GnuPG")
 setup_gpg() {
 	mkdir -pv "$HOME/.local/share/gnupg"
 	chmod 700 "$HOME/.local/share/gnupg"
 	gpg --gen-key
 }
 
-nonroot_options+=("install_addons")
+nonroot_actions+=("install_addons" "Install Firefox addons")
 install_addons() {
 	firefox $(cat $data/addons)
 	# install custom user.js
@@ -121,25 +121,46 @@ install_addons() {
 	done
 }
 
+# Determine privelege level, set actions accordingly
 if [ $(id -u) -eq 0 ]; then
 	role="root"
-	options=("${root_options[@]}")
+	actions=("${root_actions[@]}")
 else
 	role="non-root"
-	options=("${nonroot_options[@]}")
+	actions=("${nonroot_actions[@]}")
 fi
 
+# Determine which TUI program to use
+if type dialog > /dev/null; then
+	tui="dialog"
+else
+	tui="whiptail"
+fi
+
+# Welcome screen
+$tui --title "Notice" --ok-button "Proceed" \
+	--msgbox "Welcome to Marble! An automated ricing solution. Please make sure your system is up to date before proceeding." \
+	0 0
+
+# Main loop
 while true; do
+
+	# Get user selection
+	choice=$($tui --title "Actions" --ok-button "Select" --cancel-button "Exit" --notags \
+		--menu "You are running Marble as ${role}. The following options are available:" \
+		0 0 0 "${actions[@]}" 3>&1 1>&2 2>&3)
+	code=$?
+
+	# Clear the screen
 	clear
-	echo "you are running marble as ${role}. the following options are available:"
-	PS3="your selection: "
-	select opt in "${options[@]//_/ }"; do
-		if [ -n "$opt" ]; then
-			eval "${opt// /_}"
-			read -n 1 -s -r -p "press any key to continue."
-		else
-			read -n 1 -s -r -p "invalid option. try again."
-		fi
+
+	# Exit if the user wishes to
+	if [ $code -ne 0 ]; then
 		break
-	done
+	fi
+
+	# Carry out chosen action
+	eval "$choice"
+	read -n 1 -s -r -p "Press any key to continue."
+
 done
