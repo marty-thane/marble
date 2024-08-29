@@ -22,5 +22,10 @@ understand the actions performed by the script before executing it.
 
 ## To-Do
 
-- **Auto-Ricing:** Integrate all features into a single option for easy
+- **Auto mode:** Integrate all features into a single option for easy
   customization and setup of a vanilla system.
+- **Safety measures:** Create logic for handling exceptions and unforeseen
+  scenarios (file not found etc.).
+- **Pretty UI:** CLI interfaces can be confusing. Implement a TUI interface
+  (using `whiptail`) with logs telling the user what's happening behind the
+  scenes.
