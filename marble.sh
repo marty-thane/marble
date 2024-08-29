@@ -1,18 +1,91 @@
 #!/bin/bash
 
-data="./files/"
-
-install_dotfiles() {
-	read -p 'GitHub URL: https://github.com/' gh_path
-	git clone "https://github.com/$gh_path" dotfiles/
-	mkdir -pv $HOME/.config/
-	mv -iv dotfiles/* $HOME/.config/
-	mv -iv dotfiles/.* $HOME/.config/
-	rmdir -v dotfiles/
+pkg_install() {
+	xbps-install -y $@
 }
 
+pkg_remove() {
+	xbps-remove -y $@
+}
+
+service_enable() {
+	ln -s /etc/sv/"$1" /var/service
+}
+
+service_disable() {
+	rm /var/service/"$1"
+}
+
+data="./files/"
+root_options=()
+nonroot_options=()
+
+root_options+=("setup_doas")
+setup_doas() {
+	pkg_install opendoas
+	cp -v "$data/doas.conf" '/etc/'
+	echo 'ignorepkg=sudo' > /etc/xbps.d/nosudo.conf
+	pkg_remove sudo
+}
+
+root_options+=("grub_disable_timeout")
+grub_disable_timeout() {
+	if grep -q "^GRUB_TIMEOUT=" /etc/default/grub; then
+		sed -i -E 's/GRUB_TIMEOUT=[0-9]*/GRUB_TIMEOUT=0/' /etc/default/grub
+	else
+		echo "GRUB_TIMEOUT=0" >> /etc/default/grub
+	fi
+	grub-mkconfig -o /boot/grub/grub.cfg
+}
+
+root_options+=("setup_networkmanager")
+setup_networkmanager() {
+	service_disable dhcpcd
+	service_disable wpa_supplicant
+	pkg_install NetworkManager polkit
+	service_enable NetworkManager
+}
+
+root_options+=("enable_dbus")
+enable_dbus() {
+	service_enable dbus
+}
+
+root_options+=("disable_ssh")
+disable_ssh() {
+	service_disable sshd
+}
+
+root_options+=("numlock_at_boot")
+numlock_at_boot() {
+	mkdir -pv "/etc/sv/numlock"
+	cp -v "$data/numlock" "/etc/sv/numlock/run"
+	chmod +x /etc/sv/numlock/run
+	service_enable numlock
+}
+
+root_options+=("disable_root")
+disable_root() {
+	passwd -l root
+}
+
+root_options+=("setup_locate")
+setup_locate() {
+	pkg_install plocate
+	updatedb -v
+}
+
+root_options+=("bash_xdg")
+bash_xdg() {
+	mkdir -pv "/etc/profile.d/"
+	cp -v "$data/profile_xdg.sh" "/etc/profile.d/"
+	mkdir -pv "/etc/bash/bashrc.d/"
+	cp -v "$data/bashrc_xdg.sh" "/etc/bash/bashrc.d/"
+}
+
+root_options+=("install_i3")
 install_i3() {
-	xbps-install -Sy $(cat $data/progs)
+	pkg_install $(cat $data/progs)
 	mkdir -pv $HOME/.local/src/
 	git clone https://github.com/marty-thane/sent.git $HOME/.local/src/sent/
 	make -C $HOME/.local/src/sent/ install clean
@@ -20,64 +93,25 @@ install_i3() {
 	make -C $HOME/.local/src/dmenu/ install clean
 }
 
-grub_disable_timeout() {
-	sed -i -E 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
-	grub-mkconfig -o /boot/grub/grub.cfg
-}
-
-setup_networkmanager() {
-	rm -v /var/service/dhcpcd
-	xbps-install -Sy NetworkManager polkit
-	ln -s /etc/sv/NetworkManager /var/service
-}
-
-enable_dbus() {
-	ln -s /etc/sv/dbus /var/service
-}
-
-disable_ssh() {
-	rm -v /var/service/sshd
-}
-
-disable_root() {
-	passwd -l root
-}
-
-numlock_at_boot() {
-	mkdir -pv "/etc/sv/numlock"
-	cp -v "$data/numlock" "/etc/sv/numlock/run"
-	chmod +x /etc/sv/numlock/run
-	ln -sv /etc/sv/numlock /var/service/
-}
-
-setup_locate() {
-	xbps-install -Sy plocate
-	updatedb -v
-}
-
+nonroot_options+=("create_user_dirs")
 create_user_dirs() {
 	xdg-user-dirs-update --force
 }
 
+nonroot_options+=("install_dotfiles")
+install_dotfiles() {
+	read -p 'GitHub URL: https://github.com/' gh_path
+	git clone "https://github.com/$gh_path" $HOME/.config/
+}
+
+nonroot_options+=("setup_gpg")
 setup_gpg() {
 	mkdir -pv "$HOME/.local/share/gnupg"
 	chmod 700 "$HOME/.local/share/gnupg"
-	gpg --full-gen-key
-	chmod 600 "$HOME/.local/share/gnupg/*"
+	gpg --gen-key
 }
 
-bash_xdg() {
-	mkdir -pv "/etc/profile.d/"
-	mkdir -pv "/etc/bash/bashrc.d/"
-	cp -v "$data/profile_xdg.sh" "/etc/profile.d/"
-	cp -v "$data/bashrc_xdg.sh" "/etc/bash/bashrc.d/"
-}
-
-setup_doas() {
-	xbps-install -Sy opendoas
-	cp -v "$data/doas.conf" "/etc/"
-}
-
+nonroot_options+=("install_addons")
 install_addons() {
 	firefox $(cat $data/addons)
 	# install custom user.js
@@ -87,52 +121,25 @@ install_addons() {
 	done
 }
 
-declare -A root_options=(
-    ["Disable GRUB Timeout"]="grub_disable_timeout"
-    ["Disable Root Account"]="disable_root"
-    ["Disable SSH"]="disable_ssh"
-    ["Enable DBus"]="enable_dbus"
-    ["Enable NumLock At Boot"]="numlock_at_boot"
-    ["Install i3"]="install_i3"
-    ["Make Bash XDG Compliant"]="bash_xdg"
-    ["Setup Doas"]="setup_doas"
-    ["Setup Locate"]="setup_locate"
-    ["Setup NetworkManager"]="setup_networkmanager"
-)
-
-declare -A user_options=(
-    ["Create User Directories"]="create_user_dirs"
-    ["Install Dotfiles"]="install_dotfiles"
-    ["Install Firefox Addons"]="install_addons"
-    ["Setup GPG"]="setup_gpg"
-)
-
-# determine if running as root or normal user
-if [ "$(id -u)" -eq 0 ]; then
-	options=("${!root_options[@]}")
+if [ $(id -u) -eq 0 ]; then
 	role="root"
+	options=("${root_options[@]}")
 else
-	options=("${!user_options[@]}")
-	role="a normal user"
+	role="non-root"
+	options=("${nonroot_options[@]}")
 fi
 
 while true; do
-	echo "You are running Marble as ${role}. The following options are available:"
-
-	PS3="Select: "
-	select opt in "${options[@]}"; do
+	clear
+	echo "you are running marble as ${role}. the following options are available:"
+	PS3="your selection: "
+	select opt in "${options[@]//_/ }"; do
 		if [ -n "$opt" ]; then
-			if [ "$(id -u)" -eq 0 ]; then
-				command="${root_options[$opt]}"
-			else
-				command="${user_options[$opt]}"
-			fi
-			eval "$command"
-			read -p "Press Enter to continue."
+			eval "${opt// /_}"
+			read -n 1 -s -r -p "press any key to continue."
 		else
-			echo "Invalid option. Try again."
+			read -n 1 -s -r -p "invalid option. try again."
 		fi
 		break
 	done
-	echo ""
 done
