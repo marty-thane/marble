@@ -2,6 +2,7 @@ alacritty
 arandr
 autotiling
 bash-completion
+browserpass
 firefox-esr
 i3
 i3status
@@ -13,16 +14,16 @@ newsboat
 noto-fonts-emoji
 pass
 passmenu
+pavucontrol
 picom
+pinentry-gtk
 pulseaudio
 ranger
 redshift
 sxiv
-pavucontrol
-pinentry-gtk
-ufw
 udevil
 ueberzug
+ufw
 xclip
 xdg-user-dirs
 xinit
