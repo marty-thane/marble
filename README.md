@@ -29,8 +29,3 @@ understand the actions performed by the script before executing it.
 - **Logging:** Many actions the script provides lack proper logging, leaving
   the user guessing about what is going on. It should be unified as much as
   possible.
-- **Multiple parts:** Separate frontend/backend parts of the script into
-  separate files, making them easier to navigate.
-- **Order:** Actions should follow a logical order in case the user decides to
-  go through all of them. May not be necessary once automatic mode is
-  implemented.

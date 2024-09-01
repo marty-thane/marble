@@ -1,0 +1,5 @@
+# Setup NetworkManager
+service_disable dhcpcd
+service_disable wpa_supplicant
+pkg_install NetworkManager polkit
+service_enable NetworkManager
