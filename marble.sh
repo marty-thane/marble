@@ -19,6 +19,13 @@ service_disable() {
        rm /var/service/"$1"
 }
 
+# Source action, exit if any command fails
+execute_action() {
+	local -
+	set -e
+	source "$1"
+}
+
 # Determine privelege level
 if [ $(id -u) -eq 0 ]; then
 	ROLE="root"
@@ -51,7 +58,8 @@ while true; do
 	fi
 
 	# Carry out chosen action
-	source "$choice"
+	execute_action "$choice"
 	read -n 1 -s -r -p "Press any key to continue."
+	echo
 
 done
