@@ -21,7 +21,6 @@ service_disable() {
 
 # Source action, exit if any command fails
 execute_action() {
-	local -
 	set -e
 	source "$1"
 }
