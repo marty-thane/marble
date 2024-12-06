@@ -24,3 +24,6 @@ cairo-devel
 farbfeld
 libXft-devel
 libXinerama-devel
+
+autoconf-archive
+guile-devel
