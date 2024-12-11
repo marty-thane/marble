@@ -1,6 +1,13 @@
 # Setup GnuPG
 mkdir -pv "$HOME/.local/share/gnupg"
 chmod 700 "$HOME/.local/share/gnupg"
-echo 'pinentry-program /usr/local/bin/pinentry-rofi' > "$HOME/.local/share/gnupg/gpg-agent.conf"
+echo 'pinentry-program /usr/bin/pinentry-gnome3' > "$HOME/.local/share/gnupg/gpg-agent.conf"
 gpg-connect-agent reloadagent /bye
-gpg --gen-key
+read -p "Path to .asc key (skip to generate new): " keyfile
+if [ -z "$keyfile" ]; then
+	gpg --gen-key
+else
+	if [ -f "$keyfile" ]; then
+		gpg --import "$keyfile"
+	fi
+fi
